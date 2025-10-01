@@ -1,3 +1,8 @@
+# CRITICAL: SENSITIVE FILES
+# Ignores the main .env file and the one inside the backend folder
+.env
+/backend/.env
+/backend/.venv/
 # Miscellaneous
 *.class
 *.log
