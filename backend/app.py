@@ -7,9 +7,9 @@ from flask_cors import CORS
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-import time # Added for simulating processing time
+import time 
 
-# --- GLOBAL SETUP ---
+
 app = Flask(__name__)
 CORS(app)
 
@@ -17,7 +17,7 @@ load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
     print("Warning: GEMINI_API_KEY not set. Check environment variables.")
-    client = None # Placeholder if key is missing
+    client = None 
 else:
     try:
         client = genai.Client(api_key=api_key)
@@ -25,10 +25,8 @@ else:
         print(f"Error initializing Gemini client: {e}")
         client = None 
 
-# In-memory job manager to track progress and results
 job_manager = {}
 
-# Schema for consistent JSON (unchanged)
 output_schema = types.Schema(
     type=types.Type.ARRAY,
     items=types.Schema(
@@ -45,7 +43,7 @@ output_schema = types.Schema(
     )
 )
 
-# --- ASYNCHRONOUS JOB FUNCTION ---
+
 
 def run_summarization_job(job_id, email_data):
     """The actual long-running task to be executed in a separate thread."""
@@ -68,11 +66,11 @@ def run_summarization_job(job_id, email_data):
     """
     
     try:
-        time.sleep(1) # Simulate pre-processing time
-        job_manager[job_id]["progress"] = 30 # Simulate progress update
+        time.sleep(1) 
+        job_manager[job_id]["progress"] = 30 
 
         if not client:
-            # Use a controlled failure for easier debugging if API key is missing
+            
             raise Exception("Gemini client is not initialized. Please set GEMINI_API_KEY.")
 
         response = client.models.generate_content(
@@ -119,28 +117,22 @@ def submit_job():
     job_id = str(uuid.uuid4())
     job_manager[job_id] = {"status": "processing", "progress": 0, "results": None, "error": None}
     
-    # Start the summarization task in a new thread immediately
+   
     thread = threading.Thread(target=run_summarization_job, args=(job_id, email_data))
     thread.start()
     
-    # Return the job ID immediately so the frontend can start polling
     return jsonify({"job_id": job_id}), 202 # 202 Accepted status
 
 @app.route("/status/<job_id>", methods=["GET"])
 def get_status(job_id):
     """Allows the frontend to poll for the current progress and final results."""
     if job_id not in job_manager:
-        # This 404 response is correct if the job manager has already cleaned up the job.
-        # The frontend must handle this gracefully (which it currently does).
         return jsonify({"error": "Job not found"}), 404
         
     job = job_manager[job_id]
     
-    # Check for completion and failure first
     if job["status"] == "completed":
-        # Return results and then delete the job entry
         results = job["results"]
-        # Delay deletion until the *next* poll to ensure the client gets the 200 result at least once
         del job_manager[job_id] 
         return jsonify({
             "status": "completed",
@@ -149,9 +141,7 @@ def get_status(job_id):
         }), 200
         
     elif job["status"] == "failed":
-        # Return the error message and status code 500
         error_msg = job["error"]
-        # Immediately delete to prevent repeated polling of known failed job
         del job_manager[job_id] 
         return jsonify({
             "status": "failed",
@@ -159,7 +149,6 @@ def get_status(job_id):
             "error": error_msg
         }), 500 # Use 500 to clearly signal a server-side error to Flutter
         
-    # Otherwise, return current progress
     else:
         return jsonify({
             "status": "processing",
