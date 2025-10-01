@@ -1,3 +1,4 @@
+import 'package:email_summarizer/emailsummarizerscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // REQUIRED for Clipboard
 
@@ -29,6 +30,17 @@ class SummariesScreen extends StatelessWidget {
       // AppBar is themed via main.dart
       appBar: AppBar(
         title: const Text('Summarized Insights'),
+        // ADDED: Back arrow button to the AppBar
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Use Navigator.pop to go back to the previous screen
+            Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => EmailSummarizerScreen()),
+        );
+          },
+        ),
       ),
       body: summaries.isEmpty
           ? const Center(
